@@ -1,0 +1,173 @@
+.landing-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 2rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.brand {
+  font-weight: 700;
+  color: var(--text-h);
+}
+
+.nav-links {
+  display: flex;
+  gap: 1rem;
+}
+
+.nav-links a {
+  text-decoration: none;
+  color: var(--text);
+  font-weight: 500;
+}
+
+.hero {
+  display: grid;
+  grid-template-columns: 1.1fr 1fr;
+  gap: 2rem;
+  align-items: center;
+  padding: 2rem;
+}
+
+.hero-copy {
+  text-align: left;
+}
+
+.eyebrow {
+  color: var(--accent);
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.cta-row {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  padding: 0.7rem 1.2rem;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.btn-primary {
+  background: var(--accent);
+  color: #fff;
+}
+
+.btn-secondary {
+  border: 1px solid var(--border);
+  color: var(--text-h);
+}
+
+.hero-visual {
+  min-height: 260px;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: radial-gradient(circle at 20% 20%, var(--accent-bg), transparent 45%),
+    radial-gradient(circle at 80% 80%, #50a8ff22, transparent 45%);
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+}
+
+.hero-visual img {
+  width: 64px;
+  height: 64px;
+  z-index: 2;
+}
+
+.orb {
+  position: absolute;
+  border-radius: 999px;
+  filter: blur(8px);
+}
+
+.orb-left {
+  width: 90px;
+  height: 90px;
+  background: #7c3aed66;
+  left: 18%;
+  top: 20%;
+}
+
+.orb-right {
+  width: 110px;
+  height: 110px;
+  background: #14b8a666;
+  right: 16%;
+  bottom: 16%;
+}
+
+.section {
+  padding: 0 2rem 1rem;
+}
+
+.card-grid,
+.role-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.card,
+.role-card {
+  text-align: left;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 1rem;
+  background: var(--social-bg);
+}
+
+.card h3,
+.role-card h3 {
+  margin: 0 0 0.5rem;
+  color: var(--text-h);
+}
+
+.footer {
+  border-top: 1px solid var(--border);
+  margin-top: 1rem;
+  padding: 1.25rem 2rem 2rem;
+  display: flex;
+  justify-content: space-between;
+}
+
+@media (max-width: 900px) {
+  .topbar,
+  .hero,
+  .section,
+  .footer {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  .hero {
+    grid-template-columns: 1fr;
+  }
+
+  .card-grid,
+  .role-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .footer {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+}
