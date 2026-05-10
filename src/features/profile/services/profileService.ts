@@ -58,3 +58,27 @@ export const updateTraineeTrainerList = (
       auth: true,
     },
   )
+
+export const deleteTrainerByUsername = (username: string): Promise<void> =>
+  request<void>(`/trainers/${encodeURIComponent(username)}`, {
+    method: 'DELETE',
+    auth: true,
+  })
+
+export const deleteTraineeByUsername = (username: string): Promise<void> =>
+  request<void>(`/trainees/${encodeURIComponent(username)}`, {
+    method: 'DELETE',
+    auth: true,
+  })
+
+export const toggleTrainerActiveStatus = (id: number): Promise<void> =>
+  request<void>(`/trainers/${id}/status`, {
+    method: 'PATCH',
+    auth: true,
+  })
+
+export const toggleTraineeActiveStatus = (id: number): Promise<void> =>
+  request<void>(`/trainees/${id}/status`, {
+    method: 'PATCH',
+    auth: true,
+  })

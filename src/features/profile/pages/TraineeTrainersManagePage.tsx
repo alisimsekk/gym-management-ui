@@ -93,7 +93,7 @@ export function TraineeTrainersManagePage() {
           <input
             value={searchText}
             onChange={(e) => setSearchText(e.target.value)}
-            placeholder="ornek: steve"
+            placeholder="örnek: steve"
             className="rounded-lg border border-white/15 bg-slate-950 px-3 py-2 text-sm text-white outline-none focus:border-cyan-300"
           />
         </label>

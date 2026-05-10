@@ -29,9 +29,8 @@ export function ProfileLayout() {
   if (role === 'ADMIN') {
     return (
       <Container>
-        <p className="rounded-lg border border-white/10 bg-slate-900/70 px-4 py-3 text-sm text-slate-300">
-          Yönetici hesapları için bu bölüm kapalı.
-        </p>
+        <ProfileSubNav variant="admin" />
+        <Outlet />
       </Container>
     )
   }
@@ -39,6 +38,7 @@ export function ProfileLayout() {
   return (
     <Container>
       <ProfileSubNav
+        variant="default"
         showWorkload={role === 'TRAINER'}
         showTraineeTrainers={role === 'TRAINEE'}
         showTrainerAssignedStudents={role === 'TRAINER'}

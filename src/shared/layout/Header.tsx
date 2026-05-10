@@ -13,7 +13,7 @@ const sectionLinks: ReadonlyArray<{ href: string; label: string }> = [
 export function Header() {
   const { isAuthenticated, logout, role } = useAuth()
   const canCreateTraining =
-    role === 'TRAINEE' || role === 'TRAINER'
+    role === 'TRAINEE' || role === 'TRAINER' || role === 'ADMIN'
   const location = useLocation()
   const isLanding = location.pathname === '/'
 
@@ -47,6 +47,14 @@ export function Header() {
                   className="rounded-full bg-cyan-400 px-4 py-2 text-xs font-semibold text-slate-950 transition hover:bg-cyan-300"
                 >
                   Antrenman oluştur
+                </Link>
+              )}
+              {role === 'ADMIN' && (
+                <Link
+                  to="/admin"
+                  className="rounded-full border border-amber-400/50 px-4 py-2 text-xs font-semibold text-amber-100 transition hover:border-amber-300"
+                >
+                  Yönetim
                 </Link>
               )}
               <Link

@@ -42,3 +42,11 @@ export interface TrainingTypeResponse {
   id: number
   trainingTypeName: string
 }
+
+export interface TrainingTypeRequest {
+  trainingName: string
+}
+
+export interface TrainingTypeSearchRequest {
+  trainingName?: string
+}

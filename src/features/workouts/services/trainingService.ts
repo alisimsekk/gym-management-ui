@@ -45,3 +45,9 @@ export const deleteTraining = (id: number): Promise<void> =>
     method: 'DELETE',
     auth: true,
   })
+
+export const getAllTrainings = (): Promise<TrainingResponse[]> =>
+  request<TrainingResponse[]>('/trainings', {
+    method: 'GET',
+    auth: true,
+  })

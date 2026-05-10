@@ -347,7 +347,7 @@ function App() {
             <div className="space-y-4 rounded-2xl border border-white/10 bg-slate-900/80 p-6 text-sm text-slate-200">
               <p>
                 <span className="font-semibold text-white">Adres:</span>{' '}
-                Konya Teknik Üniversitesi Kampüs, Spor Merkezi No: 12, Konya
+                Konya Teknik Üniversitesi Kampüsü, Spor Merkezi No: 12, Konya
               </p>
               <p>
                 <span className="font-semibold text-white">Telefon:</span>{' '}

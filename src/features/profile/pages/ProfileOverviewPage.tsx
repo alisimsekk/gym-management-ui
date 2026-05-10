@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, Navigate } from 'react-router-dom'
 import { useAuth } from '../../auth/hooks/useAuth'
 import { resolveUserFacingApiErrorMessage } from '../../../shared/utils/resolveUserFacingApiError'
+import { AdminProfileOverview } from '../components/AdminProfileOverview'
 import { ProfileActions } from '../components/ProfileActions'
 import { AssignedTrainersSummary } from '../components/AssignedTrainersSummary'
 import { TraineeProfileForm } from '../components/TraineeProfileForm'
@@ -158,12 +159,7 @@ export function ProfileOverviewPage() {
   }
 
   if (role === 'ADMIN') {
-    return (
-      <p className="rounded-lg border border-white/10 bg-slate-900/70 px-4 py-3 text-sm text-slate-300">
-        Yönetici hesapları için profil sayfası kapalı. Yönetim paneline
-        gidebilirsin.
-      </p>
-    )
+    return <AdminProfileOverview />
   }
 
   return role === 'TRAINEE' ? (

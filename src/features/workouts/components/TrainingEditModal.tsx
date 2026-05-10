@@ -7,6 +7,7 @@ import type {
 } from '../../profile/types/profile.types'
 import { useTraineesDirectoryQuery } from '../../profile/hooks/useTraineesDirectoryQuery'
 import { useTrainersDirectoryQuery } from '../../profile/hooks/useTrainersDirectoryQuery'
+import { filterActiveUsers } from '../../profile/utils/filterActiveDirectoryUsers'
 import { resolveUserFacingApiErrorMessage } from '../../../shared/utils/resolveUserFacingApiError'
 import type { TrainingResponse } from '../types/workout.types'
 import type { TrainingTypeResponse } from '../types/workout.types'
@@ -99,23 +100,33 @@ export function TrainingEditModal({
 }: TrainingEditModalProps) {
   const isTrainee = role === 'TRAINEE'
   const isTrainer = role === 'TRAINER'
+  const isAdmin = role === 'ADMIN'
 
   const trainersQuery = useTrainersDirectoryQuery(
     {},
-    { enabled: isTrainee },
+    { enabled: isTrainee || isAdmin },
   )
   const traineesQuery = useTraineesDirectoryQuery(
     {},
-    { enabled: isTrainer },
+    { enabled: isTrainer || isAdmin },
+  )
+
+  const activeTrainerDirectory = useMemo(
+    () => filterActiveUsers(trainersQuery.data),
+    [trainersQuery.data],
+  )
+  const activeTraineeDirectory = useMemo(
+    () => filterActiveUsers(traineesQuery.data),
+    [traineesQuery.data],
   )
 
   const trainerOptions = useMemo(
-    () => trainersWithCurrent(trainersQuery.data, training),
-    [trainersQuery.data, training],
+    () => trainersWithCurrent(activeTrainerDirectory, training),
+    [activeTrainerDirectory, training],
   )
   const traineeOptions = useMemo(
-    () => traineesWithCurrent(traineesQuery.data, training),
-    [traineesQuery.data, training],
+    () => traineesWithCurrent(activeTraineeDirectory, training),
+    [activeTraineeDirectory, training],
   )
 
   const mutation = useUpdateTrainingMutation()
@@ -138,6 +149,7 @@ export function TrainingEditModal({
     const tid =
       trainingTypes.find((t) => t.trainingTypeName === training.trainingType)
         ?.id ?? 0
+    /* eslint-disable-next-line react-hooks/set-state-in-effect -- seçili antrenman değişimi */
     setForm({
       trainingName: training.trainingName,
       trainingDate: toDateInput(training.trainingDate),
@@ -148,8 +160,8 @@ export function TrainingEditModal({
     })
   }, [training, trainingTypes])
 
-  const lockTrainee = isTrainee
-  const lockTrainer = isTrainer
+  const lockTrainee = isTrainee && !isAdmin
+  const lockTrainer = isTrainer && !isAdmin
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -161,13 +173,19 @@ export function TrainingEditModal({
       return
     }
 
-    const traineeU = lockTrainee ? sessionUsername : form.traineeUsername.trim()
-    const trainerU = lockTrainer ? sessionUsername : form.trainerUsername.trim()
+    const traineeU =
+      lockTrainee ? sessionUsername : form.traineeUsername.trim()
+    const trainerU =
+      lockTrainer ? sessionUsername : form.trainerUsername.trim()
 
     if (!traineeU || !trainerU) {
-      setError(
-        isTrainee ? 'Bir antrenör seçmelisin.' : 'Bir trainee seçmelisin.',
-      )
+      if (isAdmin) {
+        setError('Öğrenci ve antrenör kullanıcı adlarını seçin.')
+      } else if (isTrainee) {
+        setError('Bir antrenör seçmelisin.')
+      } else {
+        setError('Bir trainee seçmelisin.')
+      }
       return
     }
 
@@ -198,8 +216,10 @@ export function TrainingEditModal({
     )
   }
 
-  const trainerSelectBusy = isTrainee && trainersQuery.isLoading
-  const traineeSelectBusy = isTrainer && traineesQuery.isLoading
+  const trainerSelectBusy =
+    (isTrainee || isAdmin) && trainersQuery.isLoading
+  const traineeSelectBusy =
+    (isTrainer || isAdmin) && traineesQuery.isLoading
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
@@ -282,6 +302,61 @@ export function TrainingEditModal({
               ))}
             </select>
           </label>
+
+          {isAdmin && (
+            <>
+              <label className="grid gap-1 text-sm text-slate-200">
+                Trainee seçimi
+                <select
+                  required
+                  disabled={traineeSelectBusy}
+                  value={form.traineeUsername}
+                  onChange={(e) =>
+                    setForm((f) => ({
+                      ...f,
+                      traineeUsername: e.target.value,
+                    }))
+                  }
+                  className="rounded-lg border border-white/15 bg-slate-950 px-3 py-2 text-sm text-white outline-none focus:border-cyan-300 disabled:opacity-60"
+                >
+                  <option value="">
+                    {traineesQuery.isLoading ? 'Liste yükleniyor…' : 'Trainee seç'}
+                  </option>
+                  {traineeOptions.map((t) => (
+                    <option key={t.username} value={t.username}>
+                      {t.firstName} {t.lastName}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="grid gap-1 text-sm text-slate-200">
+                Antrenör seçimi
+                <select
+                  required
+                  disabled={trainerSelectBusy}
+                  value={form.trainerUsername}
+                  onChange={(e) =>
+                    setForm((f) => ({
+                      ...f,
+                      trainerUsername: e.target.value,
+                    }))
+                  }
+                  className="rounded-lg border border-white/15 bg-slate-950 px-3 py-2 text-sm text-white outline-none focus:border-cyan-300 disabled:opacity-60"
+                >
+                  <option value="">
+                    {trainersQuery.isLoading
+                      ? 'Antrenörler yükleniyor…'
+                      : 'Antrenör seç'}
+                  </option>
+                  {trainerOptions.map((t) => (
+                    <option key={t.username} value={t.username}>
+                      {t.firstName} {t.lastName} — {t.specialization}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </>
+          )}
 
           {lockTrainee && (
             <>

@@ -8,7 +8,7 @@ export const useCreateTrainingMutation = () => {
   return useMutation({
     mutationFn: (payload: TrainingRequest) => createTraining(payload),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['trainings', 'mine'] })
+      void queryClient.invalidateQueries({ queryKey: ['trainings'] })
     },
   })
 }

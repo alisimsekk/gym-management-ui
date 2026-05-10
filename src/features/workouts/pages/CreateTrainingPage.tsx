@@ -1,9 +1,10 @@
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import type { FormEvent } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../auth/hooks/useAuth'
 import { useTraineesDirectoryQuery } from '../../profile/hooks/useTraineesDirectoryQuery'
 import { useTrainersDirectoryQuery } from '../../profile/hooks/useTrainersDirectoryQuery'
+import { filterActiveUsers } from '../../profile/utils/filterActiveDirectoryUsers'
 import { useTrainingTypesQuery } from '../hooks/useTrainingTypesQuery'
 import { useCreateTrainingMutation } from '../hooks/useCreateTrainingMutation'
 import { ApiError } from '../../../shared/api/apiError'
@@ -16,8 +17,13 @@ export function CreateTrainingPage() {
   const typesQuery = useTrainingTypesQuery()
   const createMutation = useCreateTrainingMutation()
 
-  const traineesCanLoad = Boolean(isAuthenticated && role === 'TRAINER')
-  const trainersCanLoad = Boolean(isAuthenticated && role === 'TRAINEE')
+  const isAdmin = role === 'ADMIN'
+  const traineesCanLoad = Boolean(
+    isAuthenticated && (role === 'TRAINER' || isAdmin),
+  )
+  const trainersCanLoad = Boolean(
+    isAuthenticated && (role === 'TRAINEE' || isAdmin),
+  )
 
   const traineesDirectory = useTraineesDirectoryQuery(
     {},
@@ -28,23 +34,87 @@ export function CreateTrainingPage() {
     { enabled: trainersCanLoad },
   )
 
+  const activeTrainees = useMemo(
+    () => filterActiveUsers(traineesDirectory.data),
+    [traineesDirectory.data],
+  )
+  const activeTrainers = useMemo(
+    () => filterActiveUsers(trainersDirectory.data),
+    [trainersDirectory.data],
+  )
+
   const [trainingName, setTrainingName] = useState('')
   const [trainingDate, setTrainingDate] = useState('')
   const [trainingDuration, setTrainingDuration] = useState(60)
   const [trainingTypeId, setTrainingTypeId] = useState<number>(0)
   const [selectedPeerUsername, setSelectedPeerUsername] = useState('')
+  const [adminTraineeUsername, setAdminTraineeUsername] = useState('')
+  const [adminTrainerUsername, setAdminTrainerUsername] = useState('')
   const [error, setError] = useState<string | null>(null)
 
-  if (!isAuthenticated || !username || !role) {
+  if (!isAuthenticated || !role) {
     return <Navigate to="/auth/login" replace />
   }
-
-  if (role === 'ADMIN') {
-    return <Navigate to="/admin" replace />
+  if (role !== 'ADMIN' && !username) {
+    return <Navigate to="/auth/login" replace />
   }
 
   const isTrainee = role === 'TRAINEE'
   const isTrainer = role === 'TRAINER'
+
+  useEffect(() => {
+    const traineesReady =
+      traineesDirectory.data !== undefined && !traineesDirectory.isLoading
+    const trainersReady =
+      trainersDirectory.data !== undefined && !trainersDirectory.isLoading
+
+    if ((isTrainer || isAdmin) && traineesReady) {
+      if (
+        isTrainer &&
+        selectedPeerUsername &&
+        !activeTrainees.some((t) => t.username === selectedPeerUsername)
+      ) {
+        setSelectedPeerUsername('')
+      }
+      if (
+        isAdmin &&
+        adminTraineeUsername &&
+        !activeTrainees.some((t) => t.username === adminTraineeUsername)
+      ) {
+        setAdminTraineeUsername('')
+      }
+    }
+
+    if ((isTrainee || isAdmin) && trainersReady) {
+      if (
+        isTrainee &&
+        selectedPeerUsername &&
+        !activeTrainers.some((t) => t.username === selectedPeerUsername)
+      ) {
+        setSelectedPeerUsername('')
+      }
+      if (
+        isAdmin &&
+        adminTrainerUsername &&
+        !activeTrainers.some((t) => t.username === adminTrainerUsername)
+      ) {
+        setAdminTrainerUsername('')
+      }
+    }
+  }, [
+    activeTrainees,
+    activeTrainers,
+    adminTrainerUsername,
+    adminTraineeUsername,
+    isAdmin,
+    isTrainer,
+    isTrainee,
+    selectedPeerUsername,
+    traineesDirectory.data,
+    traineesDirectory.isLoading,
+    trainersDirectory.data,
+    trainersDirectory.isLoading,
+  ])
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -55,18 +125,29 @@ export function CreateTrainingPage() {
       return
     }
 
-    const peer = selectedPeerUsername.trim()
-    if (!peer) {
-      setError(
-        isTrainee
-          ? 'Listeden bir antrenör seçin.'
-          : 'Listeden bir trainee seçin.',
-      )
-      return
-    }
+    let traineeUsername: string
+    let trainerUsername: string
 
-    const traineeUsername = isTrainee ? username : peer
-    const trainerUsername = isTrainer ? username : peer
+    if (isAdmin) {
+      traineeUsername = adminTraineeUsername.trim()
+      trainerUsername = adminTrainerUsername.trim()
+      if (!traineeUsername || !trainerUsername) {
+        setError('Trainee ve antrenör kullanıcılarını seçin.')
+        return
+      }
+    } else {
+      const peer = selectedPeerUsername.trim()
+      if (!peer) {
+        setError(
+          isTrainee
+            ? 'Listeden bir antrenör seçin.'
+            : 'Listeden bir trainee seçin.',
+        )
+        return
+      }
+      traineeUsername = isTrainee ? username! : peer
+      trainerUsername = isTrainer ? username! : peer
+    }
 
     createMutation.mutate(
       {
@@ -78,7 +159,10 @@ export function CreateTrainingPage() {
         trainingTypeId,
       },
       {
-        onSuccess: () => navigate('/profil/antrenmanlar'),
+        onSuccess: () =>
+          isAdmin
+            ? navigate('/admin/antrenmanlar')
+            : navigate('/profil/antrenmanlar'),
         onError: (err) => {
           if (err instanceof ApiError) {
             setError(
@@ -95,10 +179,26 @@ export function CreateTrainingPage() {
     )
   }
 
-  const trainersLoading =
-    isTrainee && (trainersDirectory.isLoading || !trainersDirectory.data)
-  const traineesLoading =
-    isTrainer && (traineesDirectory.isLoading || !traineesDirectory.data)
+  const trainersSelectBusy =
+    (isTrainee || isAdmin) && trainersDirectory.isLoading
+  const traineesSelectBusy =
+    (isTrainer || isAdmin) && traineesDirectory.isLoading
+
+  const traineeDirReady =
+    traineesDirectory.data !== undefined && !traineesDirectory.isLoading
+  const trainerDirReady =
+    trainersDirectory.data !== undefined && !trainersDirectory.isLoading
+
+  const noActiveTraineesToPick =
+    (isTrainer || isAdmin) &&
+    traineeDirReady &&
+    activeTrainees.length === 0 &&
+    !traineesDirectory.isError
+  const noActiveTrainersToPick =
+    (isTrainee || isAdmin) &&
+    trainerDirReady &&
+    activeTrainers.length === 0 &&
+    !trainersDirectory.isError
 
   return (
     <main className="mx-auto w-full max-w-lg px-4 py-10 sm:px-6">
@@ -111,6 +211,8 @@ export function CreateTrainingPage() {
           'Trainee olarak sen otomatik seçilirsin; antrenörü listeden seçmen yeterli.'}
         {isTrainer &&
           'Trainer olarak sen antrenör olarak otomatik seçilirsin; trainee listesinden karşı tarafı seçmen yeterli.'}
+        {isAdmin &&
+          'Admin olarak iki listeyi de kullanarak herhangi bir öğrenci-antrenör çiftini seç.'}
       </p>
 
       <form className="mt-8 grid gap-4" onSubmit={handleSubmit}>
@@ -166,51 +268,130 @@ export function CreateTrainingPage() {
         </label>
 
         {isTrainee && (
-          <label className="grid gap-1 text-sm text-slate-200">
-            Antrenör seçimi
-            <select
-              required
-              disabled={trainersLoading}
-              value={selectedPeerUsername}
-              onChange={(e) => setSelectedPeerUsername(e.target.value)}
-              className="rounded-lg border border-white/15 bg-slate-950 px-3 py-2 text-sm text-white outline-none focus:border-cyan-300"
-            >
-              <option value="">
-                {trainersDirectory.isLoading
-                  ? 'Antrenörler yükleniyor…'
-                  : 'Antrenör seç'}
-              </option>
-              {(trainersDirectory.data ?? []).map((t) => (
-                <option key={t.username} value={t.username}>
-                  {t.firstName} {t.lastName} — {t.specialization}
+          <div className="grid gap-1">
+            <label className="grid gap-1 text-sm text-slate-200">
+              Antrenör seçimi
+              <select
+                required
+                disabled={trainersSelectBusy}
+                value={selectedPeerUsername}
+                onChange={(e) => setSelectedPeerUsername(e.target.value)}
+                className="rounded-lg border border-white/15 bg-slate-950 px-3 py-2 text-sm text-white outline-none focus:border-cyan-300"
+              >
+                <option value="">
+                  {trainersDirectory.isLoading
+                    ? 'Antrenörler yükleniyor…'
+                    : 'Antrenör seç'}
                 </option>
-              ))}
-            </select>
-          </label>
+                {activeTrainers.map((t) => (
+                  <option key={t.username} value={t.username}>
+                    {t.firstName} {t.lastName} — {t.specialization}
+                  </option>
+                ))}
+              </select>
+            </label>
+            {noActiveTrainersToPick && (
+              <p className="text-xs text-amber-200/90">
+                Etkin antrenör bulunmuyor; yeni antrenman oluşturulamaz.
+              </p>
+            )}
+          </div>
         )}
 
         {isTrainer && (
-          <label className="grid gap-1 text-sm text-slate-200">
-            Trainee seçimi
-            <select
-              required
-              disabled={traineesLoading}
-              value={selectedPeerUsername}
-              onChange={(e) => setSelectedPeerUsername(e.target.value)}
-              className="rounded-lg border border-white/15 bg-slate-950 px-3 py-2 text-sm text-white outline-none focus:border-cyan-300"
-            >
-              <option value="">
-                {traineesDirectory.isLoading
-                  ? 'Trainee listesi yükleniyor…'
-                  : 'Trainee seç'}
-              </option>
-              {(traineesDirectory.data ?? []).map((t) => (
-                <option key={t.username} value={t.username}>
-                  {t.firstName} {t.lastName}
+          <div className="grid gap-1">
+            <label className="grid gap-1 text-sm text-slate-200">
+              Trainee seçimi
+              <select
+                required
+                disabled={traineesSelectBusy}
+                value={selectedPeerUsername}
+                onChange={(e) => setSelectedPeerUsername(e.target.value)}
+                className="rounded-lg border border-white/15 bg-slate-950 px-3 py-2 text-sm text-white outline-none focus:border-cyan-300"
+              >
+                <option value="">
+                  {traineesDirectory.isLoading
+                    ? 'Trainee listesi yükleniyor…'
+                    : 'Trainee seç'}
                 </option>
-              ))}
-            </select>
-          </label>
+                {activeTrainees.map((t) => (
+                  <option key={t.username} value={t.username}>
+                    {t.firstName} {t.lastName}
+                  </option>
+                ))}
+              </select>
+            </label>
+            {noActiveTraineesToPick && (
+              <p className="text-xs text-amber-200/90">
+                Etkin öğrenci bulunmuyor; yeni antrenman oluşturulamaz.
+              </p>
+            )}
+          </div>
+        )}
+
+        {isAdmin && (
+          <>
+            <div className="grid gap-1">
+              <label className="grid gap-1 text-sm text-slate-200">
+                Öğrenci (trainee)
+                <select
+                  required
+                  disabled={traineesSelectBusy}
+                  value={adminTraineeUsername}
+                  onChange={(e) =>
+                    setAdminTraineeUsername(e.target.value)
+                  }
+                  className="rounded-lg border border-white/15 bg-slate-950 px-3 py-2 text-sm text-white outline-none focus:border-cyan-300"
+                >
+                  <option value="">
+                    {traineesDirectory.isLoading
+                      ? 'Liste yükleniyor…'
+                      : 'Seç'}
+                  </option>
+                  {activeTrainees.map((t) => (
+                    <option key={t.username} value={t.username}>
+                      {t.firstName} {t.lastName} — @{t.username}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              {noActiveTraineesToPick && (
+                <p className="text-xs text-amber-200/90">
+                  Etkin öğrenci yok; önce kullanıcı hesaplarını etkinleştirin.
+                </p>
+              )}
+            </div>
+            <div className="grid gap-1">
+              <label className="grid gap-1 text-sm text-slate-200">
+                Antrenör
+                <select
+                  required
+                  disabled={trainersSelectBusy}
+                  value={adminTrainerUsername}
+                  onChange={(e) =>
+                    setAdminTrainerUsername(e.target.value)
+                  }
+                  className="rounded-lg border border-white/15 bg-slate-950 px-3 py-2 text-sm text-white outline-none focus:border-cyan-300"
+                >
+                  <option value="">
+                    {trainersDirectory.isLoading
+                      ? 'Liste yükleniyor…'
+                      : 'Seç'}
+                  </option>
+                  {activeTrainers.map((t) => (
+                    <option key={t.username} value={t.username}>
+                      {t.firstName} {t.lastName} — @{t.username}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              {noActiveTrainersToPick && (
+                <p className="text-xs text-amber-200/90">
+                  Etkin antrenör yok; önce kullanıcı hesaplarını etkinleştirin.
+                </p>
+              )}
+            </div>
+          </>
         )}
 
         {error && (
@@ -224,8 +405,15 @@ export function CreateTrainingPage() {
             type="submit"
             disabled={
               createMutation.isPending ||
-              (isTrainee && trainersDirectory.isError) ||
-              (isTrainer && traineesDirectory.isError)
+              (isTrainee &&
+                (trainersDirectory.isError || noActiveTrainersToPick)) ||
+              (isTrainer &&
+                (traineesDirectory.isError || noActiveTraineesToPick)) ||
+              (isAdmin &&
+                (trainersDirectory.isError ||
+                  traineesDirectory.isError ||
+                  noActiveTraineesToPick ||
+                  noActiveTrainersToPick))
             }
             className="rounded-full bg-cyan-400 px-6 py-2.5 text-sm font-semibold text-slate-950 hover:bg-cyan-300 disabled:opacity-60"
           >

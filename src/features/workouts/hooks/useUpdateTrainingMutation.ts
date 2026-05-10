@@ -13,7 +13,7 @@ export const useUpdateTrainingMutation = () => {
   return useMutation({
     mutationFn: ({ id, payload }: Args) => updateTraining(id, payload),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['trainings', 'mine'] })
+      void queryClient.invalidateQueries({ queryKey: ['trainings'] })
     },
   })
 }

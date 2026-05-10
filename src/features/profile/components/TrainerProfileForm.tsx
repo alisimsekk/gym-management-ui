@@ -35,6 +35,7 @@ export function TrainerProfileForm({
   const [form, setForm] = useState<FormState>(() => buildInitialState(profile))
 
   useEffect(() => {
+    /* eslint-disable-next-line react-hooks/set-state-in-effect -- profil refetch senkronu */
     setForm(buildInitialState(profile))
   }, [profile])
 

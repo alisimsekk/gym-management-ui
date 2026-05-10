@@ -7,7 +7,7 @@ export const useDeleteTrainingMutation = () => {
   return useMutation({
     mutationFn: (id: number) => deleteTraining(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['trainings', 'mine'] })
+      void queryClient.invalidateQueries({ queryKey: ['trainings'] })
     },
   })
 }
