@@ -29,6 +29,77 @@ const normalizeRole = (value: unknown): UserRole | null => {
   return null
 }
 
+const normalizeExpirationDate = (
+  value: unknown,
+  accessToken: string,
+): string => {
+  if (typeof value === 'string' && value.trim().length > 0) {
+    return value
+  }
+
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    const ms = value > 1_000_000_000_000 ? value : value * 1000
+    return new Date(ms).toISOString()
+  }
+
+  if (Array.isArray(value) && value.length >= 3) {
+    const [year, month, day, hour = 0, minute = 0, second = 0] = value
+    return new Date(
+      Number(year),
+      Number(month) - 1,
+      Number(day),
+      Number(hour),
+      Number(minute),
+      Number(second),
+    ).toISOString()
+  }
+
+  if (value && typeof value === 'object') {
+    const record = value as {
+      year?: number
+      monthValue?: number
+      dayOfMonth?: number
+      hour?: number
+      minute?: number
+      second?: number
+    }
+    if (typeof record.year === 'number') {
+      return new Date(
+        record.year,
+        (record.monthValue ?? 1) - 1,
+        record.dayOfMonth ?? 1,
+        record.hour ?? 0,
+        record.minute ?? 0,
+        record.second ?? 0,
+      ).toISOString()
+    }
+  }
+
+  const payload = parseJwtPayload(accessToken)
+  if (payload && typeof payload.exp === 'number') {
+    return new Date(payload.exp * 1000).toISOString()
+  }
+
+  return new Date(Date.now() + 3_600_000).toISOString()
+}
+
+const getExpirationTime = (session: {
+  accessToken: string
+  expirationDate: string
+}): number | null => {
+  const payload = parseJwtPayload(session.accessToken)
+  if (payload && typeof payload.exp === 'number') {
+    return payload.exp * 1000
+  }
+
+  const parsed = new Date(session.expirationDate).getTime()
+  if (!Number.isNaN(parsed)) {
+    return parsed
+  }
+
+  return null
+}
+
 export const buildSessionFromLogin = (response: LoginResponse): AuthSession => {
   const payload = parseJwtPayload(response.accessToken)
   const role =
@@ -45,7 +116,10 @@ export const buildSessionFromLogin = (response: LoginResponse): AuthSession => {
   return {
     accessToken: response.accessToken,
     tokenType: response.tokenType,
-    expirationDate: response.expirationDate,
+    expirationDate: normalizeExpirationDate(
+      response.expirationDate,
+      response.accessToken,
+    ),
     role,
     username,
   }
@@ -75,7 +149,7 @@ export const isAuthenticated = (): boolean => {
   const session = getSession()
   if (!session) return false
 
-  const expiration = new Date(session.expirationDate).getTime()
-  if (Number.isNaN(expiration)) return true
+  const expiration = getExpirationTime(session)
+  if (expiration === null) return true
   return expiration > Date.now()
 }

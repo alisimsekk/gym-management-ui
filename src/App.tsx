@@ -96,12 +96,9 @@ function App() {
   const showCreateTraining =
     isAuthenticated && (role === 'TRAINEE' || role === 'TRAINER')
 
-  const welcome = (location.state as RegisterWelcomeState | null)
-    ?.registerWelcome
+  const welcome = (location.state as RegisterWelcomeState | null)?.registerWelcome
   const showWelcomeModal = Boolean(
-    welcome?.username &&
-      welcome.plainPassword &&
-      welcome.plainPassword.length > 0,
+    welcome?.username && welcome.plainPassword && welcome.plainPassword.length > 0,
   )
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
@@ -141,12 +138,12 @@ function App() {
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               {!isAuthenticated && (
-                <a
-                  href="/auth/register"
+                <Link
+                  to="/auth/register"
                   className="rounded-full bg-cyan-400 px-5 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-cyan-300"
                 >
                   Kayıt Ol
-                </a>
+                </Link>
               )}
               <a
                 href="#grup-dersleri"

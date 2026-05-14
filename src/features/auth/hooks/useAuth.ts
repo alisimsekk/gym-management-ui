@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import type { AuthSession, UserRole } from '../types/auth.types'
 import {
   clearSession,
@@ -24,6 +24,7 @@ interface UseAuthResult {
 export const useAuth = (): UseAuthResult => {
   const queryClient = useQueryClient()
   const navigate = useNavigate()
+  const location = useLocation()
   const [session, setSession] = useState<AuthSession | null>(() => {
     const s = getSession()
     if (!s) return null
@@ -49,6 +50,16 @@ export const useAuth = (): UseAuthResult => {
     }
     return subscribeAuthChange(sync)
   }, [])
+
+  useEffect(() => {
+    const s = getSession()
+    if (!s) {
+      setSession(null)
+      return
+    }
+    const synced = syncSessionFromAccessToken(s)
+    setSession(synced)
+  }, [location.pathname])
 
   const logout = useCallback(
     (redirectTo: string = '/') => {

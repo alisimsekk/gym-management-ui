@@ -31,7 +31,8 @@ export function RegisterPage() {
               const session = buildSessionFromLogin(loginResponse)
               saveSession(session)
               const plainPassword = registerResponse.password
-              navigate(getRouteByRole(session.role), {
+              navigate(getRouteByRole(), {
+                replace: true,
                 state: {
                   registerWelcome: {
                     username: registerResponse.username,

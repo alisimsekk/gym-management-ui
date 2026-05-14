@@ -1,8 +1,3 @@
-import type { UserRole } from '../types/auth.types'
+export const POST_LOGIN_ROUTE = '/'
 
-export const getRouteByRole = (role: UserRole): string => {
-  if (role === 'ADMIN') {
-    return '/admin'
-  }
-  return '/'
-}
+export const getRouteByRole = (): string => POST_LOGIN_ROUTE

@@ -21,7 +21,7 @@ export function LoginPage() {
       onSuccess: (response) => {
         const session = buildSessionFromLogin(response)
         saveSession(session)
-        navigate(getRouteByRole(session.role))
+        navigate(getRouteByRole(), { replace: true })
       },
       onError: (err) => {
         if (err instanceof ApiError) {

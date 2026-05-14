@@ -41,20 +41,30 @@ export function WelcomePasswordModal({
           id="welcome-title"
           className="text-xl font-semibold text-white"
         >
-          Hoş geldin, {username}!
+          Hoş geldin!
         </h2>
         <p className="mt-3 text-sm leading-6 text-slate-300">
-          Hesabın oluşturuldu. Güvenliğin için sana otomatik üretilen şifreyi bir
-          şifre yöneticisine veya güvenilir bir ortama kaydet; bu iletiyi
-          kapattıktan sonra yeniden görüntüleyemezsin.
+          Hesabın oluşturuldu. Güvenliğin için otomatik üretilen kullanıcı adı ve
+          şifreyi bir şifre yöneticisine veya güvenilir bir ortama kaydet; bu
+          iletiyi kapattıktan sonra yeniden görüntüleyemezsin.
         </p>
-        <div className="mt-4 rounded-xl border border-amber-300/40 bg-amber-500/10 px-4 py-3">
-          <p className="text-xs font-medium uppercase tracking-wide text-amber-200">
-            Tek seferlik şifren
-          </p>
-          <p className="mt-2 select-all break-all font-mono text-sm text-white">
-            {plainPassword}
-          </p>
+        <div className="mt-4 space-y-3">
+          <div className="rounded-xl border border-cyan-300/40 bg-cyan-500/10 px-4 py-3">
+            <p className="text-xs font-medium uppercase tracking-wide text-cyan-200">
+              Kullanıcı adın
+            </p>
+            <p className="mt-2 select-all break-all font-mono text-sm text-white">
+              {username}
+            </p>
+          </div>
+          <div className="rounded-xl border border-amber-300/40 bg-amber-500/10 px-4 py-3">
+            <p className="text-xs font-medium uppercase tracking-wide text-amber-200">
+              Tek seferlik şifren
+            </p>
+            <p className="mt-2 select-all break-all font-mono text-sm text-white">
+              {plainPassword}
+            </p>
+          </div>
         </div>
         <p className="mt-3 text-xs text-slate-500">
           Şifreyi daha sonra{' '}
