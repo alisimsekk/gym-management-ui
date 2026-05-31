@@ -7,7 +7,18 @@ const parseJwtPayload = (token: string): Record<string, unknown> | null => {
     if (!payloadBase64) {
       return null
     }
-    const payloadJson = atob(payloadBase64.replace(/-/g, '+').replace(/_/g, '/'))
+
+    const base64 = payloadBase64.replace(/-/g, '+').replace(/_/g, '/')
+    
+    const binaryString = atob(base64)
+
+    const bytes = new Uint8Array(binaryString.length)
+    for (let i = 0; i < binaryString.length; i++) {
+      bytes[i] = binaryString.charCodeAt(i)
+    }
+
+    const payloadJson = new TextDecoder('utf-8').decode(bytes)
+
     return JSON.parse(payloadJson) as Record<string, unknown>
   } catch {
     return null
