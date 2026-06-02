@@ -1,38 +1,35 @@
 import { Navigate } from 'react-router-dom'
 import { useAuth } from '../../auth/hooks/useAuth'
-import { resolveUserFacingApiErrorMessage } from '../../../shared/utils/resolveUserFacingApiError'
-import { useTrainerWorkload } from '../hooks/useTrainerWorkload'
+import { TrainerWorkloadEmptyState } from '../components/TrainerWorkloadEmptyState'
+import { TrainerWorkloadErrorState } from '../components/TrainerWorkloadErrorState'
 import { TrainerWorkloadPanel } from '../components/TrainerWorkloadPanel'
+import { useTrainerWorkload } from '../hooks/useTrainerWorkload'
+import { resolveTrainerWorkloadViewState } from '../utils/resolveTrainerWorkloadViewState'
 
 export function TrainerWorkloadPage() {
-  const { role, username, isAuthenticated } = useAuth()
-  const query = useTrainerWorkload(
-    role === 'TRAINER' ? username : null,
-  )
+    const { role, username, isAuthenticated } = useAuth()
+    const query = useTrainerWorkload(role === 'TRAINER' ? username : null)
+    const viewState = resolveTrainerWorkloadViewState(query)
 
-  if (!isAuthenticated || !username || !role) {
-    return <Navigate to="/auth/login" replace />
-  }
+    if (!isAuthenticated || !username || !role) {
+        return <Navigate to="/auth/login" replace />
+    }
 
-  if (role !== 'TRAINER') {
-    return <Navigate to="/profil" replace />
-  }
+    if (role !== 'TRAINER') {
+        return <Navigate to="/profil" replace />
+    }
 
-  if (query.isLoading) {
-    return <p className="text-sm text-slate-400">Yükleniyor…</p>
-  }
+    if (viewState.kind === 'loading') {
+        return <p className="text-sm text-slate-400">Yükleniyor…</p>
+    }
 
-  if (query.isError || !query.data) {
-    const msg = resolveUserFacingApiErrorMessage(
-      query.error,
-      'Rapor alınamadı.',
-    )
-    return (
-      <p className="whitespace-pre-line rounded-lg border border-rose-300/40 bg-rose-500/10 px-3 py-2 text-sm text-rose-200">
-        {msg}
-      </p>
-    )
-  }
+    if (viewState.kind === 'empty') {
+        return <TrainerWorkloadEmptyState variant="trainer" />
+    }
 
-  return <TrainerWorkloadPanel data={query.data} />
+    if (viewState.kind === 'error') {
+        return <TrainerWorkloadErrorState error={viewState.error} />
+    }
+
+    return <TrainerWorkloadPanel data={viewState.data} />
 }
